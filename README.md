@@ -14,6 +14,12 @@
 
 ## 2. Gathering a Dataset
 
+### Results
+
+Confusion matrices on the HaGRID test split and on the recorded images:
+
+![Test set confusion matrices](02-dataset/conf-matrix.png)
+
 ### Annotation tool (`02-dataset/annotate.py`)
 
 Expects images organised in gesture subfolders (same layout as HaGRID):
@@ -54,3 +60,20 @@ python 02-dataset/annotate.py --images data/ --load data/_annotations/stop.json 
 | `Q` | Save & quit |
 
 ## 3. Gesture-controlled Camera App
+
+On first run, the [MediaPipe Hand Landmarker model](https://developers.google.com/edge/mediapipe/solutions/vision/hand_landmarker) (~7.5 MB) is downloaded automatically and cached in `03-camera-app/`.
+
+```bash
+python 03-camera-app/camera_app.py --time 5 --path selfie.jpg
+```
+
+| Argument | Default | Description |
+|----------|---------|-------------|
+| `--camera` | `0` | Camera device ID |
+| `--time` | `3.0` | Countdown duration in seconds |
+| `--path` | `selfie.jpg` | File path for the saved image |
+
+| Key | Action |
+|-----|--------|
+| `D` | Toggle hand crop debug window |
+| `Q` | Quit |

@@ -20,3 +20,9 @@ Thumbs.db
 # Datasets (do not commit per assignment instructions)
 data/
 gesture_dataset_sample/
+
+# Downloaded model weights (auto-downloaded at runtime)
+*.task
+
+# Trained models (large binary files)
+02-dataset/gesture_recognition_vgg.keras
