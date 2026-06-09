@@ -14,11 +14,22 @@
 
 ## 2. Gathering a Dataset
 
+### Image Capture
+
+Five gesture categories (**like**, **dislike**, **stop**, **rock**, **peace**) were recorded across three locations. Images were captured with an **iPhone 13 Pro** (portrait, resized to 1080×1920 or 1440×1920) and a **Logitech C920 Pro** webcam (1920×1080 landscape). All images are stored in `02-dataset/data_felix/`.
+
 ### Results
 
 Confusion matrices on the HaGRID test split and on the recorded images:
 
 ![Test set confusion matrices](02-dataset/conf-matrix.png)
+
+| Model | Train Accuracy | Val Accuracy | Val Loss |
+|-------|---------------|--------------|----------|
+| Baseline CNN | 96.50 % | 94.80 % | 0.1832 |
+| VGG-based CNN | 99.50 % | 89.20 % | 0.3088 |
+
+The Baseline CNN is the sequential model provided in the course (3x Conv2D + MaxPooling, Dropout, 2x Dense). The baseline performs better on the validation set even though it is simpler. The VGG model scores higher on training but drops off on validation, suggesting it is overfitting. The Baseline CNN also has far fewer parameters (297K / 1.13 MB vs. 15.3M / 58.4 MB), making it faster and lighter. For these reasons it was chosen as the model for Exercise 3.
 
 ### Annotation tool (`02-dataset/annotate.py`)
 
@@ -61,7 +72,7 @@ python 02-dataset/annotate.py --images data/ --load data/_annotations/stop.json 
 
 ## 3. Gesture-controlled Camera App
 
-On first run, the [MediaPipe Hand Landmarker model](https://developers.google.com/edge/mediapipe/solutions/vision/hand_landmarker) (~7.5 MB) is downloaded automatically and cached in `03-camera-app/`.
+The app uses the [MediaPipe Hand Landmarker](https://developers.google.com/edge/mediapipe/solutions/vision/hand_landmarker) to locate the hand in the frame and extract a crop, which is then passed to the gesture classifier. Only one hand is tracked at a time. The model file (~7.5 MB) is downloaded automatically on first run and cached in `03-camera-app/`.
 
 ```bash
 python 03-camera-app/camera_app.py --time 5 --path selfie.jpg
@@ -73,7 +84,17 @@ python 03-camera-app/camera_app.py --time 5 --path selfie.jpg
 | `--time` | `3.0` | Countdown duration in seconds |
 | `--path` | `selfie.jpg` | File path for the saved image |
 
-| Key | Action |
-|-----|--------|
-| `D` | Toggle hand crop debug window |
-| `Q` | Quit |
+After capture the app pauses for 2.5 seconds showing "Saved!" before accepting new gestures. Gestures must be held for ~4 frames before they register.
+
+| Key | Gesture equivalent | Action |
+|-----|--------------------|--------|
+| `Space` | Thumbs up | Start countdown |
+| `Esc` | Thumbs down | Cancel countdown |
+| `C` | Rock | Toggle chromatic aberration |
+| `E` | Peace | Toggle long exposure |
+| `D` | — | Toggle hand crop debug window |
+| `Q` | — | Quit |
+
+**Chromatic aberration** (Rock / `C`) — splits the colour channels horizontally, giving a glitchy RGB fringe effect.
+
+**Long exposure** (Peace / `E`) — blends each frame into a float accumulator, ghosting moving objects while keeping static parts sharp. The effect fades over roughly one second.
