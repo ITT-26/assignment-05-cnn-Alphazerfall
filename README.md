@@ -12,6 +12,51 @@
 
 ## 1. Exploring Hyperparameters
 
+Kernel size was compared across all three convolution layers in [`01-hyperparameters/hyperparameters.ipynb`](01-hyperparameters/hyperparameters.ipynb).
+
+### Approach & Assumptions
+
+The original course notebook used only 2 gesture categories (`like`, `stop`). Here all 10 available categories are used (`dislike`, `fist`, `like`, `ok`, `one`, `peace`, `rock`, `stop`, `three`, `two_up`), since a harder problem should show the effect of kernel size more clearly.
+
+All other hyperparameters are kept fixed (`batch_size=8`, `activation_conv=leaky_relu`, `activation=relu`, `layer_count=2`, `num_neurons=64`). The kernel size is changed uniformly across all three convolution layers to isolate its effect.
+
+All runs train for the same fixed number of epochs (25) without early stopping. Only `ReduceLROnPlateau` is kept so the learning rate can adapt the same way in all runs. Without this, small kernels that converge quickly would train for 20 to 30 epochs while large kernels that fail to learn would stop after 5, which would make the comparison meaningless.
+
+Each kernel size is trained 5 times and the results are reported as mean and standard deviation, since large kernels turned out to be very sensitive to random initialisation. In a first single-run test, 13x13 looked like it performed well (~0.82) while 9x9 and 11x11 failed completely (~0.10). After repeating the runs the picture reversed: 13x13 consistently failed while 9x9 and 11x11 just showed high variance. So a single run would have been pure luck.
+
+**Tested values:** 3x3, 5x5, 7x7, 9x9, 11x11, 13x13
+
+**Assumptions before training:**
+- Accuracy should decrease with larger kernels.
+- Inference time should increase with kernel size.
+- Parameter count should grow quadratically with kernel size.
+
+### Findings & Discussion
+
+![Accuracy, inference time and parameter count vs kernel size](01-hyperparameters/kernel_size_results.png)
+
+![Mean validation accuracy curves per kernel size](01-hyperparameters/kernel_size_accuracy_curves_mean.png)
+
+![Per-kernel accuracy curves with std band](01-hyperparameters/kernel_size_accuracy_curves.png)
+
+| Kernel | Val accuracy | Std   | ms / img | Std  | Params  |
+|--------|-------------|-------|----------|------|---------|
+| 3×3    | 0.915       | 0.009 | 0.80     | 0.14 | 52,810  |
+| 5×5    | 0.908       | 0.021 | 0.88     | 0.08 | 105,034 |
+| 7×7    | 0.888       | 0.004 | 1.69     | 0.76 | 183,370 |
+| 9×9    | 0.540       | 0.171 | 2.10     | 0.17 | 287,818 |
+| 11×11  | 0.474       | 0.307 | 2.48     | 0.31 | 418,378 |
+| 13×13  | 0.244       | 0.273 | 2.89     | 0.19 | 575,050 |
+
+
+**Accuracy:** Small kernels (3x3 to 7x7) worked best, all reaching around 90% validation accuracy and converging reliably. From 9x9 on, accuracy dropped sharply. The large kernels were also very unstable, some runs learned something while others got stuck near random guessing, which is visible in the large error bars. This is why averaging over multiple runs was important, a single run would have been misleading.
+
+**Inference time and parameters:** Both grow with kernel size as expected. The parameter count grows roughly quadratically because the kernel area scales with the width squared.
+
+**Explanation:** The input images are only 64x64 and get pooled aggressively after each convolution layer. A 9x9 or larger kernel covers a big part of the feature map at once, so the network can no longer pick up small local patterns like finger edges, which is exactly what is needed to tell hand gestures apart.
+
+**Conclusion:** I assumed accuracy would decrease gradually with kernel size, but instead there is a sharp break between 7x7 and 9x9. Kernel size 3x3 is the clear winner with the best accuracy, shortest inference time and fewest parameters. This also matches common practice, since modern CNN architectures almost always use small odd-sized kernels, usually 3x3, as explained in [this post](https://medium.com/data-science/deciding-optimal-filter-size-for-cnns-d6f7b56f9363).
+
 ## 2. Gathering a Dataset
 
 ### Image Capture
@@ -29,7 +74,7 @@ Confusion matrices on the HaGRID test split and on the recorded images:
 | Baseline CNN | 96.50 % | 94.80 % | 0.1832 |
 | VGG-based CNN | 99.50 % | 89.20 % | 0.3088 |
 
-The Baseline CNN is the sequential model provided in the course (3x Conv2D + MaxPooling, Dropout, 2x Dense). The baseline performs better on the validation set even though it is simpler. The VGG model scores higher on training but drops off on validation, suggesting it is overfitting. The Baseline CNN also has far fewer parameters (297K / 1.13 MB vs. 15.3M / 58.4 MB), making it faster and lighter. For these reasons it was chosen as the model for Exercise 3.
+The Baseline CNN is the sequential model provided in the course (3x Conv2D + MaxPooling, Dropout, 2x Dense). The baseline performs better on the validation set even though it is simpler. The VGG model scores higher on training but drops off on validation, suggesting it is overfitting. The Baseline CNN also has far fewer parameters, 297k (1.13 MB) compared to 15.3M (58.4 MB), making it faster and lighter.
 
 ### Annotation tool (`02-dataset/annotate.py`)
 
