@@ -117,7 +117,11 @@ python 02-dataset/annotate.py --images data/ --load data/_annotations/stop.json 
 
 ## 3. Gesture-controlled Camera App
 
-The app uses the [MediaPipe Hand Landmarker](https://developers.google.com/edge/mediapipe/solutions/vision/hand_landmarker) to locate the hand in the frame and extract a crop, which is then passed to the gesture classifier. Only one hand is tracked at a time. The model file (~7.5 MB) is downloaded automatically on first run and cached in `03-camera-app/`.
+The app uses Google's [MediaPipe Hand Landmarker](https://developers.google.com/edge/mediapipe/solutions/vision/hand_landmarker) to locate the hand in the frame and extract a crop, which is then passed to the gesture classifier. Only one hand is tracked at a time. The model file (~7.5 MB) is downloaded automatically on first run and cached in `03-camera-app/`.
+
+The gesture classifier is the baseline CNN trained in [`03-camera-app/exercise3.ipynb`](03-camera-app/exercise3.ipynb) on 5 HaGRID categories (`dislike`, `like`, `peace`, `rock`, `stop`) with a validation accuracy of **95.20 %**.
+
+All arguments are optional. Example usage:
 
 ```bash
 python 03-camera-app/camera_app.py --time 5 --path selfie.jpg
